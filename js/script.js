@@ -1,5 +1,15 @@
 const global = {
   currentPage: window.location.pathname,
+  search: {
+    term: '',
+    type: '',
+    page: 1,
+    totalPages: 1,
+  },
+  api: {
+    apiKey: `be964afe29bba2d4e625f31ce04fedf9`,
+    apiUrl: `https://api.themoviedb.org/3/`,
+  },
 };
 
 async function displayPopularMovies() {
@@ -267,13 +277,30 @@ function initSwiper() {
 }
 
 async function fetchAPIData(endpoint) {
-  const APIKEY = `be964afe29bba2d4e625f31ce04fedf9`;
-  const APIURL = `https://api.themoviedb.org/3/`;
+  const APIKEY = global.api.apiKey;
+  const APIURL = global.api.apiUrl;
 
   showSpinner();
 
   const response = await fetch(
     `${APIURL}${endpoint}?api_key=${APIKEY}&language=en-US`
+  );
+
+  const data = await response.json();
+
+  hideSpinner();
+
+  return data;
+}
+
+async function searchAPIData() {
+  const APIKEY = global.api.apiKey;
+  const APIURL = global.api.apiUrl;
+
+  showSpinner();
+
+  const response = await fetch(
+    `${APIURL}search/${global.search.type}?api_key=${APIKEY}&language=en-US&query=${global.search.term}`
   );
 
   const data = await response.json();
@@ -304,6 +331,29 @@ function addCommasToNumber(number) {
   return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
+function showAlert(message, className) {
+  const alertEl = document.createElement('div');
+  alertEl.classList.add('alert', className);
+  alertEl.append(document.createTextNode(message));
+  document.querySelector('#alert').append(alertEl);
+  setTimeout(() => alertEl.remove(), 3000);
+}
+
+async function search() {
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+
+  global.search.type = urlParams.get('type');
+  global.search.term = urlParams.get('search-term');
+
+  if (global.search.term !== '' && global.search.term !== null) {
+    const results = await searchAPIData();
+    console.log(results);
+  } else {
+    showAlert('Please, enter your search term');
+  }
+}
+
 function init() {
   switch (global.currentPage) {
     case '/':
@@ -321,7 +371,7 @@ function init() {
       displayShowDetails();
       break;
     case '/search.html':
-      console.log('Search');
+      search();
       break;
   }
   highlightActiveLink();
